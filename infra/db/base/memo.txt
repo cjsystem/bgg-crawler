@@ -1,0 +1,27 @@
+OKです。じゃDBの要件をまとめてみますか
+必要なデータは
+Primary Name：Brass: Birmingham
+bgg_url: https://boardgamegeek.com/boardgame/224517/brass-birmingham -> これbgg_id: 224517にした方がいいの？
+bgg上の画像url: https://cf.geekdo-images.com/x3zxjr-Vw5iU4yDPg70Jgw__itemrep/img/giNUMut4HAl-zWyQkGG0YchmuLI=/fit-in/246x300/filters:strip_icc()/pic3490053.jpg
+Alternate Names（今回は日本語名）：ブラス：バーミンガム
+year released:2018
+bgg_avarate_rationg:8.6
+ratings(多分採点者人数):53k
+commentes:7.3k,
+プレイヤー人数：2-4
+ベストプレイヤー人数: 3-4
+rank_overall: 1
+genre: STRATEGY
+rank_genre: 1 -> STRATEGYジャンルにおいて1位のこと
+playing_time: 60-120min
+age: 14+
+weight: 3.87 / 5 -> ここは単に3.87でいいかな
+Awards & Honors: 2020 Gra Roku Game of the Year Winner, 2020 Gra Roku Game of the Year Nominee, 2020 Gra Roku Advanced Game of the Year Winner, 2020 Gra Roku Advanced Game of the Year Nominee ,2019 Origins Awards Best Board Game Nominee, 2019 Kanga Game of the Year Finalist, 2019 International Gamers Award - General Strategy: Multi-player Nominee, 2019 American Tabletop Complex Games Nominee, 2018 The Golden Elephant Award People's Choice Winner, 2018 The Golden Elephant Award Finalist, 2018 The Golden Elephant Award Best Heavy Board Game Winner, 2018 Meeples Choice Award Winner, 2018 Meeples Choice Award Nominee, 2018 Golden Geek Board Game of the Year Nominee, 2018 Golden Geek Best Strategy Board Game Winner, 2018 Golden Geek Best Strategy Board Game Nominee,2018 Golden Geek Best Board Game Artwork & Presentation Nominee,2018 Board Game Quest Awards Best Strategy/Euro Game Nominee,2018 Board Game Quest Awards Best Production Values Winner,2018 Board Game Quest Awards Best Production Values Nominee
+Designers: Gavan Brown,Matt Tolman,Martin Wallace
+Solo Designer:N/A
+Artists:Gavan Brown,Lina Cossette,David Forest,Gui Landgraf,Damien Mammoliti,Matt Tolman
+Publishers（これ要る？あんまり重要じゃないかもな）Roxley,Arclight Games,Board Game Rookie,BoardM Factory,CMON Global Limitedm,Conclave Editora,CoolPlay,CrowD Games,Dexker Games,Funforge,Gém Klub,Kft.,Ghenos Games,Giant Roc,Lanlalen,Lord of Boards,Maldito Games,PHALANX,Rebel Sp. z o.o.,TLAMA games,White Goblin Games,盒拍工作室 Hepa Studio
+Categories:Age of Reason,Economic,Industry / Manufacturing,Post-Napoleonic,Trains,Transportation
+
+こんな感じのデータをクローラーしようと思いますが、
+テーブル設計をお願いできますか？
