@@ -78,20 +78,29 @@ CREATE INDEX IF NOT EXISTS idx_best_players_count ON game_best_player_counts(pla
 -- =========================================
 -- 4. 受賞・ノミネート履歴テーブル
 -- =========================================
-CREATE TABLE IF NOT EXISTS game_awards (
+CREATE TABLE IF NOT EXISTS awards (
     id SERIAL PRIMARY KEY,
-    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     award_name VARCHAR(255) NOT NULL,
     award_year INTEGER NOT NULL,
     award_type VARCHAR(20) NOT NULL,
     award_category VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    bgg_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(award_name, award_year, award_type, award_category)  -- 重複防止
 );
 
-CREATE INDEX IF NOT EXISTS idx_awards_game_id ON game_awards(game_id);
-CREATE INDEX IF NOT EXISTS idx_awards_name ON game_awards(award_name);
-CREATE INDEX IF NOT EXISTS idx_awards_year ON game_awards(award_year);
-CREATE INDEX IF NOT EXISTS idx_awards_type ON game_awards(award_type);
+CREATE TABLE IF NOT EXISTS game_awards (
+    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    award_id INTEGER NOT NULL REFERENCES awards(id) ON DELETE CASCADE,
+    PRIMARY KEY (game_id, award_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_awards_name ON awards(award_name);
+CREATE INDEX IF NOT EXISTS idx_awards_year ON awards(award_year);
+CREATE INDEX IF NOT EXISTS idx_awards_type ON awards(award_type);
+CREATE INDEX IF NOT EXISTS idx_game_awards_game ON game_awards(game_id);
+CREATE INDEX IF NOT EXISTS idx_game_awards_award ON game_awards(award_id);
 
 -- =========================================
 -- 5. デザイナー関連
@@ -99,13 +108,13 @@ CREATE INDEX IF NOT EXISTS idx_awards_type ON game_awards(award_type);
 CREATE TABLE IF NOT EXISTS designers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
+    bgg_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS game_designers (
     game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     designer_id INTEGER NOT NULL REFERENCES designers(id) ON DELETE CASCADE,
-    is_solo BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (game_id, designer_id)
 );
 
@@ -118,6 +127,7 @@ CREATE INDEX IF NOT EXISTS idx_game_designers_designer ON game_designers(designe
 CREATE TABLE IF NOT EXISTS artists (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
+    bgg_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -136,6 +146,7 @@ CREATE INDEX IF NOT EXISTS idx_game_artists_artist ON game_artists(artist_id);
 CREATE TABLE IF NOT EXISTS publishers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
+    bgg_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -154,7 +165,7 @@ CREATE INDEX IF NOT EXISTS idx_game_publishers_publisher ON game_publishers(publ
 CREATE TABLE IF NOT EXISTS mechanics (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
-    game_count INTEGER DEFAULT 0,
+    bgg_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -173,7 +184,7 @@ CREATE INDEX IF NOT EXISTS idx_game_mechanics_mechanic ON game_mechanics(mechani
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
-    game_count INTEGER DEFAULT 0,
+    bgg_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

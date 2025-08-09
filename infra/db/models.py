@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, String, Table, Text, UniqueConstraint, text
+from sqlalchemy import Column, DateTime, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, String, Table, Text, UniqueConstraint, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import datetime
 import decimal
@@ -18,9 +18,31 @@ class Artists(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
+    bgg_url: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
     game: Mapped[List['Games']] = relationship('Games', secondary='game_artists', back_populates='artist')
+
+
+class Awards(Base):
+    __tablename__ = 'awards'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='awards_pkey'),
+        UniqueConstraint('award_name', 'award_year', 'award_type', 'award_category', name='awards_award_name_award_year_award_type_award_category_key'),
+        Index('idx_awards_name', 'award_name'),
+        Index('idx_awards_type', 'award_type'),
+        Index('idx_awards_year', 'award_year')
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    award_name: Mapped[str] = mapped_column(String(255))
+    award_year: Mapped[int] = mapped_column(Integer)
+    award_type: Mapped[str] = mapped_column(String(20))
+    award_category: Mapped[Optional[str]] = mapped_column(String(255))
+    bgg_url: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+
+    game: Mapped[List['Games']] = relationship('Games', secondary='game_awards', back_populates='award')
 
 
 class Categories(Base):
@@ -32,7 +54,7 @@ class Categories(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
-    game_count: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('0'))
+    bgg_url: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
     game: Mapped[List['Games']] = relationship('Games', secondary='game_categories', back_populates='category')
@@ -47,9 +69,10 @@ class Designers(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
+    bgg_url: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
-    game_designers: Mapped[List['GameDesigners']] = relationship('GameDesigners', back_populates='designer')
+    game: Mapped[List['Games']] = relationship('Games', secondary='game_designers', back_populates='designer')
 
 
 class Games(Base):
@@ -83,12 +106,12 @@ class Games(Base):
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
     artist: Mapped[List['Artists']] = relationship('Artists', secondary='game_artists', back_populates='game')
+    award: Mapped[List['Awards']] = relationship('Awards', secondary='game_awards', back_populates='game')
     category: Mapped[List['Categories']] = relationship('Categories', secondary='game_categories', back_populates='game')
+    designer: Mapped[List['Designers']] = relationship('Designers', secondary='game_designers', back_populates='game')
     mechanic: Mapped[List['Mechanics']] = relationship('Mechanics', secondary='game_mechanics', back_populates='game')
     publisher: Mapped[List['Publishers']] = relationship('Publishers', secondary='game_publishers', back_populates='game')
-    game_awards: Mapped[List['GameAwards']] = relationship('GameAwards', back_populates='game')
     game_best_player_counts: Mapped[List['GameBestPlayerCounts']] = relationship('GameBestPlayerCounts', back_populates='game')
-    game_designers: Mapped[List['GameDesigners']] = relationship('GameDesigners', back_populates='game')
     game_genre_ranks: Mapped[List['GameGenreRanks']] = relationship('GameGenreRanks', back_populates='game')
 
 
@@ -115,7 +138,7 @@ class Mechanics(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
-    game_count: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('0'))
+    bgg_url: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
     game: Mapped[List['Games']] = relationship('Games', secondary='game_mechanics', back_populates='mechanic')
@@ -130,6 +153,7 @@ class Publishers(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
+    bgg_url: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
     game: Mapped[List['Games']] = relationship('Games', secondary='game_publishers', back_populates='publisher')
@@ -147,26 +171,16 @@ t_game_artists = Table(
 )
 
 
-class GameAwards(Base):
-    __tablename__ = 'game_awards'
-    __table_args__ = (
-        ForeignKeyConstraint(['game_id'], ['games.id'], ondelete='CASCADE', name='game_awards_game_id_fkey'),
-        PrimaryKeyConstraint('id', name='game_awards_pkey'),
-        Index('idx_awards_game_id', 'game_id'),
-        Index('idx_awards_name', 'award_name'),
-        Index('idx_awards_type', 'award_type'),
-        Index('idx_awards_year', 'award_year')
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    game_id: Mapped[int] = mapped_column(Integer)
-    award_name: Mapped[str] = mapped_column(String(255))
-    award_year: Mapped[int] = mapped_column(Integer)
-    award_type: Mapped[str] = mapped_column(String(20))
-    award_category: Mapped[Optional[str]] = mapped_column(String(255))
-    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
-
-    game: Mapped['Games'] = relationship('Games', back_populates='game_awards')
+t_game_awards = Table(
+    'game_awards', Base.metadata,
+    Column('game_id', Integer, primary_key=True, nullable=False),
+    Column('award_id', Integer, primary_key=True, nullable=False),
+    ForeignKeyConstraint(['award_id'], ['awards.id'], ondelete='CASCADE', name='game_awards_award_id_fkey'),
+    ForeignKeyConstraint(['game_id'], ['games.id'], ondelete='CASCADE', name='game_awards_game_id_fkey'),
+    PrimaryKeyConstraint('game_id', 'award_id', name='game_awards_pkey'),
+    Index('idx_game_awards_award', 'award_id'),
+    Index('idx_game_awards_game', 'game_id')
+)
 
 
 class GameBestPlayerCounts(Base):
@@ -199,22 +213,16 @@ t_game_categories = Table(
 )
 
 
-class GameDesigners(Base):
-    __tablename__ = 'game_designers'
-    __table_args__ = (
-        ForeignKeyConstraint(['designer_id'], ['designers.id'], ondelete='CASCADE', name='game_designers_designer_id_fkey'),
-        ForeignKeyConstraint(['game_id'], ['games.id'], ondelete='CASCADE', name='game_designers_game_id_fkey'),
-        PrimaryKeyConstraint('game_id', 'designer_id', name='game_designers_pkey'),
-        Index('idx_game_designers_designer', 'designer_id'),
-        Index('idx_game_designers_game', 'game_id')
-    )
-
-    game_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    designer_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    is_solo: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('false'))
-
-    designer: Mapped['Designers'] = relationship('Designers', back_populates='game_designers')
-    game: Mapped['Games'] = relationship('Games', back_populates='game_designers')
+t_game_designers = Table(
+    'game_designers', Base.metadata,
+    Column('game_id', Integer, primary_key=True, nullable=False),
+    Column('designer_id', Integer, primary_key=True, nullable=False),
+    ForeignKeyConstraint(['designer_id'], ['designers.id'], ondelete='CASCADE', name='game_designers_designer_id_fkey'),
+    ForeignKeyConstraint(['game_id'], ['games.id'], ondelete='CASCADE', name='game_designers_game_id_fkey'),
+    PrimaryKeyConstraint('game_id', 'designer_id', name='game_designers_pkey'),
+    Index('idx_game_designers_designer', 'designer_id'),
+    Index('idx_game_designers_game', 'game_id')
+)
 
 
 class GameGenreRanks(Base):
