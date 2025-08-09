@@ -2,7 +2,10 @@ from dataclasses import dataclass, field
 from typing import Optional
 from decimal import Decimal
 
-from domain import Designer, Artist, GameGenreRank
+from domain.artist import Artist
+from domain.award import Award
+from domain.designer import Designer
+from domain.game_genre_rank import GameGenreRank
 
 
 @dataclass
@@ -23,7 +26,7 @@ class Game:
     min_age: Optional[int] = None
     weight: Optional[Decimal] = None
     rank_overall: Optional[int] = None
-    game_awards: list[str] = field(default_factory=list)
+    game_awards: list[Award] = field(default_factory=list)
     game_best_player_counts: list[int] = field(default_factory=list)
     game_designers: list[Designer] = field(default_factory=list)
     game_artists: list[Artist] = field(default_factory=list)

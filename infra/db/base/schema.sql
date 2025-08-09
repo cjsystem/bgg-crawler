@@ -83,7 +83,6 @@ CREATE TABLE IF NOT EXISTS awards (
     award_name VARCHAR(255) NOT NULL,
     award_year INTEGER NOT NULL,
     award_type VARCHAR(20) NOT NULL,
-    award_category VARCHAR(255),
     bgg_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 

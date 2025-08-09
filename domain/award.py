@@ -8,7 +8,6 @@ class Award:
     award_name: str
     award_year: int
     award_type: str
-    award_category: Optional[str] = None
     bgg_url: Optional[str] = None
 
     def __post_init__(self):

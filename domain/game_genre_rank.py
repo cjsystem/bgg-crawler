@@ -1,23 +1,22 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from domain.genre import Genre
+
 
 @dataclass
 class GameGenreRank:
     """ゲームジャンルランクエンティティ"""
-    genre_id: int
+    genre: Genre
     rank_in_genre: Optional[int] = None
 
     def __post_init__(self):
-        if self.genre_id <= 0:
-            raise ValueError("Genre ID must be positive")
         if self.rank_in_genre is not None and self.rank_in_genre <= 0:
             raise ValueError("Rank in genre must be positive")
 
     def is_valid(self) -> bool:
         """ジャンルランク情報の妥当性チェック"""
-        return (self.genre_id > 0
-                and (self.rank_in_genre is None or self.rank_in_genre > 0))
+        return self.rank_in_genre is None or self.rank_in_genre > 0
 
     def has_ranking(self) -> bool:
         """ランキングが存在するかの判定"""

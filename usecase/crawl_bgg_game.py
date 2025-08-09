@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import logging
 
 
-class CrawlBggGameUseCaseInterface(ABC):
+class CrawlBGGGameUseCaseInterface(ABC):
     """BGGゲームクローリングユースケースのインターフェース"""
 
     @abstractmethod
