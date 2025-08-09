@@ -6,20 +6,6 @@ class GameBestPlayerCount:
     """ゲームベストプレイヤー数エンティティ"""
     player_count: int
 
-    def __post_init__(self):
-        if self.game_id <= 0:
-            raise ValueError("Game ID must be positive")
-        if self.player_count <= 0:
-            raise ValueError("Player count must be positive")
-        if self.player_count > 20:  # 現実的な上限
-            raise ValueError("Player count seems unrealistic (max 20)")
-
-    def is_valid(self) -> bool:
-        """ベストプレイヤー数情報の妥当性チェック"""
-        return (self.game_id > 0
-                and self.player_count > 0
-                and self.player_count <= 20)
-
     def is_solo_play(self) -> bool:
         """ソロプレイかの判定"""
         return self.player_count == 1

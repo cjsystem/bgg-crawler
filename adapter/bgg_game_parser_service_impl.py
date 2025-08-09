@@ -1,5 +1,6 @@
 from typing import Optional
 
+from adapter.bgg_game_main_parser import BGGGameMainParser
 from adapter.port.http_client import HttpClient
 from domain.game import Game
 from usecase.port.bgg_game_parser_service import BGGGameParserService
@@ -29,7 +30,7 @@ class BGGGameParserServiceImpl(BGGGameParserService):
             if not game_main_html_content:
                 raise BGGFetchException(f"Failed to fetch game {bgg_id}")
 
-            return None
+            return BGGGameMainParser.parse_game_from_html(game_main_html_content, bgg_id)
 
         except Exception as e:
             # ログ出力（実際の実装ではloggerを使用）
