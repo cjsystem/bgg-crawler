@@ -25,8 +25,6 @@ CREATE TABLE IF NOT EXISTS games (
 
     -- ランキング
     rank_overall INTEGER,
-    genre VARCHAR(50),
-    rank_genre INTEGER,
 
     -- メタデータ
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -37,11 +35,33 @@ CREATE TABLE IF NOT EXISTS games (
 CREATE INDEX IF NOT EXISTS idx_games_bgg_id ON games(bgg_id);
 CREATE INDEX IF NOT EXISTS idx_games_rating ON games(avg_rating);
 CREATE INDEX IF NOT EXISTS idx_games_rank ON games(rank_overall);
-CREATE INDEX IF NOT EXISTS idx_games_genre_rank ON games(genre, rank_genre);
 CREATE INDEX IF NOT EXISTS idx_games_players ON games(min_players, max_players);
 
 -- =========================================
--- 2. ベストプレイヤー人数テーブル（新規追加）
+-- 2. ジャンル関連テーブル（新規追加）
+-- =========================================
+CREATE TABLE IF NOT EXISTS genres (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS game_genre_ranks (
+    id SERIAL PRIMARY KEY,
+    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    genre_id INTEGER NOT NULL REFERENCES genres(id) ON DELETE CASCADE,
+    rank_in_genre INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(game_id, genre_id)  -- 同じゲーム・同じジャンルの重複防止
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_genre_ranks_game ON game_genre_ranks(game_id);
+CREATE INDEX IF NOT EXISTS idx_game_genre_ranks_genre ON game_genre_ranks(genre_id);
+CREATE INDEX IF NOT EXISTS idx_game_genre_ranks_rank ON game_genre_ranks(rank_in_genre);
+
+-- =========================================
+-- 3. ベストプレイヤー人数テーブル
 -- =========================================
 CREATE TABLE IF NOT EXISTS game_best_player_counts (
     id SERIAL PRIMARY KEY,
@@ -56,7 +76,7 @@ CREATE INDEX IF NOT EXISTS idx_best_players_game_id ON game_best_player_counts(g
 CREATE INDEX IF NOT EXISTS idx_best_players_count ON game_best_player_counts(player_count);
 
 -- =========================================
--- 3. 受賞・ノミネート履歴テーブル
+-- 4. 受賞・ノミネート履歴テーブル
 -- =========================================
 CREATE TABLE IF NOT EXISTS game_awards (
     id SERIAL PRIMARY KEY,
@@ -74,7 +94,7 @@ CREATE INDEX IF NOT EXISTS idx_awards_year ON game_awards(award_year);
 CREATE INDEX IF NOT EXISTS idx_awards_type ON game_awards(award_type);
 
 -- =========================================
--- 4. デザイナー関連
+-- 5. デザイナー関連
 -- =========================================
 CREATE TABLE IF NOT EXISTS designers (
     id SERIAL PRIMARY KEY,
@@ -93,7 +113,7 @@ CREATE INDEX IF NOT EXISTS idx_game_designers_game ON game_designers(game_id);
 CREATE INDEX IF NOT EXISTS idx_game_designers_designer ON game_designers(designer_id);
 
 -- =========================================
--- 5. アーティスト関連
+-- 6. アーティスト関連
 -- =========================================
 CREATE TABLE IF NOT EXISTS artists (
     id SERIAL PRIMARY KEY,
@@ -111,7 +131,7 @@ CREATE INDEX IF NOT EXISTS idx_game_artists_game ON game_artists(game_id);
 CREATE INDEX IF NOT EXISTS idx_game_artists_artist ON game_artists(artist_id);
 
 -- =========================================
--- 6. パブリッシャー関連
+-- 7. パブリッシャー関連
 -- =========================================
 CREATE TABLE IF NOT EXISTS publishers (
     id SERIAL PRIMARY KEY,
@@ -129,7 +149,7 @@ CREATE INDEX IF NOT EXISTS idx_game_publishers_game ON game_publishers(game_id);
 CREATE INDEX IF NOT EXISTS idx_game_publishers_publisher ON game_publishers(publisher_id);
 
 -- =========================================
--- 7. メカニクス関連
+-- 8. メカニクス関連
 -- =========================================
 CREATE TABLE IF NOT EXISTS mechanics (
     id SERIAL PRIMARY KEY,
@@ -148,7 +168,7 @@ CREATE INDEX IF NOT EXISTS idx_game_mechanics_game ON game_mechanics(game_id);
 CREATE INDEX IF NOT EXISTS idx_game_mechanics_mechanic ON game_mechanics(mechanic_id);
 
 -- =========================================
--- 8. カテゴリ関連
+-- 9. カテゴリ関連
 -- =========================================
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,

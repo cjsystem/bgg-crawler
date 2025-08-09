@@ -25,3 +25,7 @@ Categories:Age of Reason,Economic,Industry / Manufacturing,Post-Napoleonic,Train
 
 こんな感じのデータをクローラーしようと思いますが、
 テーブル設計をお願いできますか？
+
+
+
+sqlcodegen postgresUrl
