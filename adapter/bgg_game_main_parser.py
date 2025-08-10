@@ -301,20 +301,20 @@ class BGGGameMainParser:
 
     @staticmethod
     def _extract_best_player_counts(soup: BeautifulSoup) -> List[int]:
-        """ベストプレイヤー数を抽出"""
+        """ベストプレイヤー数を抽出（単一数字も含む）"""
         best_counts = []
 
-        # "Best: 3–4" のようなテキストを探す
+        # "Best: 3–4" または "Best: 3" のようなテキストを探す
         for span in soup.find_all('span', class_='ng-binding'):
             text = span.get_text(strip=True)
             if 'Best:' in text:
-                # "Best: 3–4" から "3–4" を抽出
+                # "Best: 3–4" または "Best: 3" を抽出
                 match = re.search(r'Best:\s*(\d+)(?:[–-](\d+))?', text)
                 if match:
-                    min_best = int(match.group(1))
-                    max_best = int(match.group(2)) if match.group(2) else min_best
+                    min_best = int(match.group(1))  # 最小値は必ず取得
+                    max_best = int(match.group(2)) if match.group(2) else min_best  # 最大値がない場合はmin_bestと同じ
 
-                    # 範囲を展開（例：3-4 → [3, 4]）
+                    # 範囲を展開（例：3–4 → [3, 4]、または単一値 [3]）
                     best_counts = list(range(min_best, max_best + 1))
                     break
 
