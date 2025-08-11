@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Optional
 from bs4 import BeautifulSoup
 from adapter.bgg_game_main_parser import BGGGameMainParser
@@ -22,6 +23,59 @@ class BGGGameParserServiceImpl(BGGGameParserService):
         self.timeout = timeout
         self.user_agent = user_agent or "BGGGameCrawler/1.0"
         self.logger = logging.getLogger(__name__)
+
+    def parse_ranking_ids(self, page_num: int) -> list[int]:
+        """
+        BGGランキング（Browse Board Games）ページからbgg_id一覧を取得する
+
+        Args:
+            page_num (int): ページ番号（1始まり）
+
+        Returns:
+            list[int]: 抽出したbgg_idのリスト（昇順・重複除去）
+        """
+
+        # 入力検証
+        if not isinstance(page_num, int) or page_num <= 0:
+            raise ValueError("page_num must be a positive integer (1-based)")
+
+        # ページURLを構築
+        url = f"https://boardgamegeek.com/browse/boardgame/page/{page_num}"
+
+        # ランキングテーブルの行を待機して安定化
+        wait_element = {"by": "css_selector", "value": "tr[id^='row_']"}
+
+        # HTML取得
+        html_content = self._http_client.get_html(url, wait_element, additional_wait=2)
+        if not html_content:
+            self.logger.warning(f"Failed to fetch ranking page HTML: {url}")
+            return []
+
+        # HTML解析
+        soup = BeautifulSoup(html_content, "html.parser")
+        ids: set[int] = set()
+
+        # 1) サムネイル列・タイトル列のリンクから抽出（最も確実）
+        # 例: <a href="/boardgame/342942/ark-nova">...</a>
+        for a in soup.select(
+                "td.collection_thumbnail a[href^='/boardgame/'], "
+                "td.collection_objectname a[href^='/boardgame/']"
+        ):
+            href = a.get("href", "")
+            m = re.match(r"^/boardgame/(\d+)(?:/|$)", href)
+            if m:
+                ids.add(int(m.group(1)))
+
+        # 2) フォールバック: 広告用divのidから抽出（例: id='aad_thing_342942_textwithprices__'）
+        for div in soup.select("div[id^='aad_thing_'][id$='_textwithprices__']"):
+            div_id = div.get("id", "")
+            m = re.match(r"^aad_thing_(\d+)_", div_id)
+            if m:
+                ids.add(int(m.group(1)))
+
+        result = sorted(ids)
+        self.logger.info(f"Extracted {len(result)} bgg_ids from ranking page {page_num}")
+        return result
 
     def parse_game(self, bgg_id: int) -> Optional[Game]:
         """BGGからゲーム情報を取得してパース"""

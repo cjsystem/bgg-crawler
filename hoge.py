@@ -17,8 +17,12 @@ def test_parse_game_with_service():
 
         # パース処理を実行
         #http_client.get_html("https://boardgamegeek.com/boardgame/224517/brass-birmingham/credits")
-        game = parser_service.parse_game(test_bgg_id)
-        print(game)
+
+        # game = parser_service.parse_game(test_bgg_id)
+        # print(game)
+        ttt = parser_service.parse_ranking_ids(1)
+        print(len(ttt))
+        print(ttt)
         #
         # if game:
         #     print(f"\nゲーム名: {game.primary_name}")
