@@ -136,6 +136,11 @@ class GamesRepositoryImpl(GamesRepository):
             # commit は session_scope により自動。戻り値は bgg_id -> games.id
             return bgg_id_to_game_id
 
+    def list_all_bgg_id(self) -> List[int]:
+        """games テーブル内に存在する全ての bgg_id を list[int] で返す"""
+        with session_scope() as session:
+            return self.games.list_all_bgg_ids(session)
+
     # ========== helpers ==========
 
     @staticmethod

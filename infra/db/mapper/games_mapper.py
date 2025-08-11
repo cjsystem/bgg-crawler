@@ -210,3 +210,12 @@ class GamesMapper:
             .all()
         )
         return {bgg_id: id_ for bgg_id, id_ in rows}
+
+    def list_all_bgg_ids(self, session: Session) -> List[int]:
+        """games テーブル内の全 bgg_id を昇順で返す"""
+        rows = (
+            session.query(Games.bgg_id)
+            .order_by(Games.created_at.asc(), Games.id.asc())
+            .all()
+        )
+        return [row[0] for row in rows]

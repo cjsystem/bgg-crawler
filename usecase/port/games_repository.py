@@ -21,3 +21,8 @@ class GamesRepository(ABC):
             Dict[int, int]: bgg_id -> games.id のマッピング
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def list_all_bgg_id(self) -> List[int]:
+        """games テーブル内に存在する全ての bgg_id を list[int] で返す"""
+        raise NotImplementedError
