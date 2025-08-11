@@ -2,8 +2,8 @@ import logging
 import re
 from typing import Optional
 from bs4 import BeautifulSoup
-from adapter.bgg_game_main_parser import BGGGameMainParser
-from adapter.bgg_game_credits_parser import BGGGameCreditsParser
+from adapter.service.bgg_game_main_parser import BGGGameMainParser
+from adapter.service.bgg_game_credits_parser import BGGGameCreditsParser
 from adapter.port.http_client import HttpClient
 from domain.game import Game
 from usecase.port.bgg_game_parser_service import BGGGameParserService

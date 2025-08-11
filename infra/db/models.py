@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Column, Computed, DateTime, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, String, Table, Text, UniqueConstraint, text
+from sqlalchemy import Column, Computed, DateTime, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, String, Table, Text, UniqueConstraint, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import datetime
 import decimal
@@ -186,17 +186,11 @@ class Publishers(Base):
 class TargetGames(Base):
     __tablename__ = 'target_games'
     __table_args__ = (
-        PrimaryKeyConstraint('id', name='target_games_pkey'),
-        UniqueConstraint('bgg_id', name='target_games_bgg_id_key'),
-        Index('idx_target_games_bgg_id', 'bgg_id'),
-        Index('idx_target_games_processed', 'is_processed')
+        PrimaryKeyConstraint('bgg_id', name='target_games_pkey'),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    bgg_id: Mapped[int] = mapped_column(Integer)
+    bgg_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     memo: Mapped[Optional[str]] = mapped_column(String(500))
-    is_processed: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('false'))
-    processed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
 

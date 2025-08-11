@@ -216,13 +216,14 @@ CREATE INDEX IF NOT EXISTS idx_game_categories_category ON game_categories(categ
 
 -- 特定パース対象ゲーム管理テーブル
 CREATE TABLE IF NOT EXISTS target_games (
-    id SERIAL PRIMARY KEY,
-    bgg_id INTEGER UNIQUE NOT NULL,                     -- 対象ゲームのBGG ID
-    memo VARCHAR(500),                                  -- ゲーム名や選定理由など
-    is_processed BOOLEAN DEFAULT FALSE,                 -- 処理済みフラグ
-    processed_at TIMESTAMP NULL,                        -- 処理完了日時
+    bgg_id INTEGER PRIMARY KEY,        -- 主キーにする
+    memo VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 既にUNIQUEやインデックスを作っている場合は不要です
+-- UNIQUE(bgg_id) は不要（PRIMARY KEYが一意制約とインデックスを内包）
+-- CREATE INDEX idx_target_games_bgg_id ON target_games(bgg_id); も不要
 
 -- バッチ処理の進捗管理テーブル
 CREATE TABLE IF NOT EXISTS crawl_progress (
@@ -246,8 +247,6 @@ CREATE TABLE IF NOT EXISTS crawl_progress (
 );
 
 -- クローリング管理テーブルのインデックス
-CREATE INDEX IF NOT EXISTS idx_target_games_bgg_id ON target_games(bgg_id);
-CREATE INDEX IF NOT EXISTS idx_target_games_processed ON target_games(is_processed);
 CREATE INDEX IF NOT EXISTS idx_crawl_progress_batch_id ON crawl_progress(batch_id);
 CREATE INDEX IF NOT EXISTS idx_crawl_progress_started_at ON crawl_progress(started_at);
 

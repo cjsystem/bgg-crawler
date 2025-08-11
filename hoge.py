@@ -1,5 +1,4 @@
-from adapter.bgg_game_main_parser import BGGGameMainParser
-from adapter.bgg_game_parser_service_impl import BGGGameParserServiceImpl
+from adapter.service.bgg_game_parser_service_impl import BGGGameParserServiceImpl
 from infra.http.selenium_http_client import SeleniumHttpClient
 
 

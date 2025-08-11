@@ -23,3 +23,7 @@ class BGGGameParserService(ABC):
             BGGParseException: パース処理でエラーが発生した場合
         """
         pass
+
+    @abstractmethod
+    def parse_ranking_ids(self, page_num: int) -> list[int]:
+        pass
