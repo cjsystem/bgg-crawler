@@ -1,38 +1,40 @@
+# python
 # target_games_mapper.py
 from typing import List, Optional
+from sqlalchemy.orm import Session
 
-from ..base.db_mapper_base import DBMapperBase
 from ..models import TargetGames
 
 
-class TargetGamesMapper(DBMapperBase[TargetGames]):
-    """target_games テーブル用マッパー"""
+class TargetGamesMapper:
+    """target_games テーブル用マッパー（外部Session注入方式）"""
 
-    def __init__(self):
-        super().__init__(TargetGames)
+    def __init__(self) -> None:
+        # 状態は持たない（必要ならDIで設定を受け取る）
+        pass
 
-    def list_all(self) -> List[TargetGames]:
+    def list_all(self, session: Session) -> List[TargetGames]:
         """全ターゲットゲームを取得（ページングなし）"""
-        session = self.get_session()
-        try:
-            return session.query(TargetGames).order_by(TargetGames.created_at.asc()).all()
-        finally:
-            session.close()
+        return (
+            session.query(TargetGames)
+            .order_by(TargetGames.created_at.asc())
+            .all()
+        )
 
-    def list_all_bgg_ids(self) -> List[int]:
+    def list_all_bgg_ids(self, session: Session) -> List[int]:
         """全ターゲットゲームのbgg_idだけを取得"""
-        session = self.get_session()
-        try:
-            rows = session.query(TargetGames.bgg_id).order_by(TargetGames.created_at.asc()).all()
-            # rows は List[Tuple[int]] なので一次元配列に変換
-            return [row[0] for row in rows]
-        finally:
-            session.close()
+        rows = (
+            session.query(TargetGames.bgg_id)
+            .order_by(TargetGames.created_at.asc())
+            .all()
+        )
+        # rows は List[Tuple[int]] なので一次元配列に変換
+        return [row[0] for row in rows]
 
-    def get_by_bgg_id(self, bgg_id: int) -> Optional[TargetGames]:
+    def get_by_bgg_id(self, bgg_id: int, session: Session) -> Optional[TargetGames]:
         """bgg_idで1件取得"""
-        session = self.get_session()
-        try:
-            return session.query(TargetGames).filter(TargetGames.bgg_id == bgg_id).first()
-        finally:
-            session.close()
+        return (
+            session.query(TargetGames)
+            .filter(TargetGames.bgg_id == bgg_id)
+            .first()
+        )
