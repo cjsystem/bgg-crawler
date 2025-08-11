@@ -1,10 +1,14 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, List
 from decimal import Decimal
 
 from domain.artist import Artist
 from domain.award import Award
 from domain.designer import Designer
+from domain.publisher import Publisher
+from domain.category import Category
+from domain.mechanic import Mechanic
+from domain.game_best_player_count import GameBestPlayerCount
 from domain.game_genre_rank import GameGenreRank
 
 
@@ -26,11 +30,14 @@ class Game:
     min_age: Optional[int] = None
     weight: Optional[Decimal] = None
     rank_overall: Optional[int] = None
-    game_awards: list[Award] = field(default_factory=list)
-    game_best_player_counts: list[int] = field(default_factory=list)
-    game_designers: list[Designer] = field(default_factory=list)
-    game_artists: list[Artist] = field(default_factory=list)
-    game_genre_ranks: list[GameGenreRank] = field(default_factory=list)
+    awards: List[Award] = field(default_factory=list)
+    best_player_counts: List[int] = field(default_factory=list)
+    designers: List[Designer] = field(default_factory=list)
+    artists: List[Artist] = field(default_factory=list)
+    publishers: List[Publisher] = field(default_factory=list)
+    categories: List[Category] = field(default_factory=list)
+    mechanics: List[Mechanic] = field(default_factory=list)
+    genre_ranks: List[GameGenreRank] = field(default_factory=list)
 
     def __post_init__(self):
         if self.bgg_id <= 0:
@@ -78,3 +85,58 @@ class Game:
     def has_sufficient_ratings(self, min_ratings: int = 100) -> bool:
         """十分な評価数があるかの判定"""
         return self.ratings_count is not None and self.ratings_count >= min_ratings
+
+    def get_credits_summary(self) -> str:
+        """クレジット情報のサマリーを取得"""
+        summary_parts = []
+
+        if self.designers:
+            designer_names = [d.name for d in self.designers]
+            summary_parts.append(f"デザイナー: {', '.join(designer_names)}")
+
+        if self.artists:
+            artist_names = [a.name for a in self.artists]
+            summary_parts.append(f"アーティスト: {', '.join(artist_names)}")
+
+        if self.publishers:
+            publisher_names = [p.name for p in self.publishers]
+            summary_parts.append(f"パブリッシャー: {', '.join(publisher_names[:3])}")  # 最初の3つのみ表示
+            if len(publisher_names) > 3:
+                summary_parts.append("...")
+
+        return " | ".join(summary_parts) if summary_parts else "クレジット情報なし"
+
+    def get_best_player_counts_text(self) -> str:
+        """ベストプレイヤー数を文字列で取得"""
+        if not self.best_player_counts:
+            return "不明"
+
+        counts = sorted([bpc.player_count for bpc in self.best_player_counts])
+        if len(counts) == 1:
+            return f"{counts[0]}人"
+        elif len(counts) <= 3:
+            return f"{', '.join(map(str, counts))}人"
+        else:
+            return f"{counts[0]}-{counts[-1]}人"
+
+    def get_categories_text(self) -> str:
+        """カテゴリを文字列で取得"""
+        if not self.categories:
+            return "未分類"
+        category_names = [c.name for c in self.categories]
+        return ", ".join(category_names[:5])  # 最初の5つまで表示
+
+    def get_mechanics_text(self) -> str:
+        """メカニクスを文字列で取得"""
+        if not self.mechanics:
+            return "不明"
+        mechanic_names = [m.name for m in self.mechanics]
+        return ", ".join(mechanic_names[:5])  # 最初の5つまで表示
+
+    def has_awards(self) -> bool:
+        """受賞歴があるかの判定"""
+        return len(self.awards) > 0
+
+    def get_winner_awards(self) -> List[Award]:
+        """受賞（ノミネートではない）のみを取得"""
+        return [award for award in self.awards if award.is_winner()]

@@ -50,9 +50,9 @@ class BGGGameMainParser:
                 min_age=min_age,
                 weight=weight,
                 rank_overall=rank_overall,
-                game_awards=game_awards,
-                game_best_player_counts=game_best_player_counts,
-                game_genre_ranks=game_genre_ranks
+                awards=game_awards,
+                best_player_counts=game_best_player_counts,
+                genre_ranks=game_genre_ranks
             )
 
         except Exception as e:
