@@ -39,45 +39,59 @@ class BGGGameCreditsParser:
     def _extract_japanese_name(self, soup: BeautifulSoup) -> Optional[str]:
         """
         別名から日本語名を抽出する
-
-        Args:
-            soup: BeautifulSoupオブジェクト
-
-        Returns:
-            Optional[str]: 日本語名（見つからない場合はNone）
+        - ひらがな/カタカナ（Kana）を最低1文字以上含む名称を優先
+        - 複数候補がある場合は Kana の出現数が多い順、次点で文字列長が長い順で選択
+        - Kana を含む候補が一切ない場合は None（中国語など漢字のみを誤検知しない）
         """
         try:
-            # alternate namesセクションを探す
             alternate_section = soup.find('span', {'id': 'fullcredits-alternatename'})
             if not alternate_section:
                 self.logger.warning("Alternate names section not found")
                 return None
 
-            # 親要素に移動してalternate namesのコンテンツを探す
             parent_li = alternate_section.find_parent('li')
             if not parent_li:
                 return None
 
-            # ng-repeat="name in creditsctrl.geekitem.data.item.alternatenames"を含むdivを探す
+            # 別名候補を抽出
             alternate_divs = parent_li.find_all('div', class_='ng-binding ng-scope')
 
-            # 日本語文字（ひらがな、カタカナ、漢字）を含む名前を探す
-            japanese_pattern = re.compile(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]')
+            # パターン定義
+            kana_pattern = re.compile(r'[\u3040-\u309F\u30A0-\u30FF]')  # ひらがな・カタカナ
+            # 日本語でよく使う記号（任意・補助的）。選択ロジックの順位付け補助に使う
+            jp_symbol_pattern = re.compile(r'[・ー「」『』（）\u3001\u3002]')
 
+            candidates = []
             for div in alternate_divs:
-                name = div.get_text().strip()
-                if japanese_pattern.search(name):
-                    # 括弧内の情報を除去
-                    clean_name = re.sub(r'\([^)]*\)', '', name).strip()
-                    self.logger.info(f"Found Japanese name: {clean_name}")
-                    return clean_name
+                raw = div.get_text().strip()
+                if not raw:
+                    continue
+                # 括弧内を除去（例: 名称（国/地域））
+                name = re.sub(r'\([^)]*\)', '', raw).strip()
+                if not name:
+                    continue
 
-            self.logger.info("Japanese name not found in alternate names")
-            return None
+                kana_count = len(kana_pattern.findall(name))
+                symbol_count = len(jp_symbol_pattern.findall(name))
+                # Kana を含むものだけを候補にする（中国語の漢字のみを除外）
+                if kana_count > 0:
+                    candidates.append((name, kana_count, symbol_count, len(name)))
+
+            if not candidates:
+                self.logger.info("No alternate names contain Kana; skipping Japanese name selection to avoid false positives")
+                return None
+
+            # スコアリング: Kana数（優先）→ 日本語記号数 → 文字列長 の順で降順
+            candidates.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
+            selected = candidates[0][0]
+
+            self.logger.info(f"Found Japanese name: {selected}")
+            return selected
 
         except Exception as e:
             self.logger.error(f"Error extracting Japanese name: {e}")
             return None
+
 
     def _extract_designers(self, soup: BeautifulSoup) -> List[Designer]:
         """デザイナー情報を抽出する"""
