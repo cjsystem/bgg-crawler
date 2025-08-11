@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import Column, DateTime, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, String, Table, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, Column, Computed, DateTime, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, String, Table, Text, UniqueConstraint, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import datetime
 import decimal
@@ -60,6 +60,28 @@ class Categories(Base):
     game: Mapped[List['Games']] = relationship('Games', secondary='game_categories', back_populates='category')
 
 
+class CrawlProgress(Base):
+    __tablename__ = 'crawl_progress'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='crawl_progress_pkey'),
+        UniqueConstraint('batch_id', name='crawl_progress_batch_id_key'),
+        Index('idx_crawl_progress_batch_id', 'batch_id'),
+        Index('idx_crawl_progress_started_at', 'started_at')
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    batch_id: Mapped[str] = mapped_column(String(50))
+    total_games: Mapped[int] = mapped_column(Integer, server_default=text('0'))
+    batch_type: Mapped[Optional[str]] = mapped_column(String(20), server_default=text("'manual'::character varying"))
+    processed_games: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('0'))
+    failed_games: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('0'))
+    success_rate: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(5, 2), Computed('\nCASE\n    WHEN (total_games > 0) THEN round((((processed_games)::numeric / (total_games)::numeric) * (100)::numeric), 2)\n    ELSE (0)::numeric\nEND', persisted=True))
+    started_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+    completed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+
+
 class Designers(Base):
     __tablename__ = 'designers'
     __table_args__ = (
@@ -81,6 +103,7 @@ class Games(Base):
         PrimaryKeyConstraint('id', name='games_pkey'),
         UniqueConstraint('bgg_id', name='games_bgg_id_key'),
         Index('idx_games_bgg_id', 'bgg_id'),
+        Index('idx_games_name', 'primary_name'),
         Index('idx_games_players', 'min_players', 'max_players'),
         Index('idx_games_rank', 'rank_overall'),
         Index('idx_games_rating', 'avg_rating')
@@ -92,7 +115,7 @@ class Games(Base):
     japanese_name: Mapped[Optional[str]] = mapped_column(String(255))
     year_released: Mapped[Optional[int]] = mapped_column(Integer)
     image_url: Mapped[Optional[str]] = mapped_column(Text)
-    avg_rating: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(3, 2))
+    avg_rating: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(4, 2))
     ratings_count: Mapped[Optional[int]] = mapped_column(Integer)
     comments_count: Mapped[Optional[int]] = mapped_column(Integer)
     min_players: Mapped[Optional[int]] = mapped_column(Integer)
@@ -100,7 +123,7 @@ class Games(Base):
     min_playtime: Mapped[Optional[int]] = mapped_column(Integer)
     max_playtime: Mapped[Optional[int]] = mapped_column(Integer)
     min_age: Mapped[Optional[int]] = mapped_column(Integer)
-    weight: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(3, 2))
+    weight: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(4, 2))
     rank_overall: Mapped[Optional[int]] = mapped_column(Integer)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
@@ -124,6 +147,7 @@ class Genres(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
+    bgg_url: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
     game_genre_ranks: Mapped[List['GameGenreRanks']] = relationship('GameGenreRanks', back_populates='genre')
@@ -157,6 +181,23 @@ class Publishers(Base):
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
     game: Mapped[List['Games']] = relationship('Games', secondary='game_publishers', back_populates='publisher')
+
+
+class TargetGames(Base):
+    __tablename__ = 'target_games'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='target_games_pkey'),
+        UniqueConstraint('bgg_id', name='target_games_bgg_id_key'),
+        Index('idx_target_games_bgg_id', 'bgg_id'),
+        Index('idx_target_games_processed', 'is_processed')
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    bgg_id: Mapped[int] = mapped_column(Integer)
+    memo: Mapped[Optional[str]] = mapped_column(String(500))
+    is_processed: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('false'))
+    processed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
 
 
 t_game_artists = Table(
