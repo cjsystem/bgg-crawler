@@ -1,150 +1,220 @@
 # python
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-TargetGamesMapper + db.py の動作確認スクリプト
+import argparse
+from decimal import Decimal
+from typing import List, Dict, Any
 
-テスト内容:
-1) テストデータの投入（target_games に数件 INSERT）
-2) list_all / list_all_bgg_ids の動作確認
-3) get_by_bgg_id の動作確認
-4) クリーンアップ（任意）
-"""
+from infra.db.base.db import session_scope
+from infra.db.games_repository_impl import GamesRepositoryImpl
 
-import os
-import sys
-import random
-from datetime import datetime
-from typing import List
+# 確認用（読み出し/名称解決など）
+from infra.db.mapper.artists_mapper import ArtistsMapper
+from infra.db.mapper.base_game_link_mapper import GameDesignersLinkMapper, GameArtistsLinkMapper, \
+    GamePublishersLinkMapper, GameCategoriesLinkMapper, GameMechanicsLinkMapper, GameAwardsLinkMapper
+from infra.db.mapper.designers_mapper import DesignersMapper
+from infra.db.mapper.publishers_mapper import PublishersMapper
+from infra.db.mapper.categories_mapper import CategoriesMapper
+from infra.db.mapper.mechanics_mapper import MechanicsMapper
+from infra.db.mapper.game_genre_ranks_mapper import GameGenreRanksMapper
+from infra.db.mapper.game_best_player_counts_mapper import GameBestPlayerCountsMapper
 
-from dotenv import load_dotenv
+# ORMモデル（行の中身確認用）
+from infra.db.models import Games as GamesRow
 
-# 必要なコンポーネントをインポート
-from infra.db.base.db import SessionLocal
-from infra.db.mapper.target_games_mapper import TargetGamesMapper
-from infra.db.models import TargetGames
-
-
-def check_environment() -> bool:
-    """環境と依存の確認"""
-    print("=== 環境設定確認 ===")
-    load_dotenv()
-
-    database_url = os.getenv('DATABASE_URL')
-    if not database_url:
-        print("❌ DATABASE_URL が未設定です")
-        return False
-    print(f"✓ DATABASE_URL: {database_url[:50]}...")
-
-    try:
-        import sqlalchemy
-        print(f"✓ SQLAlchemy: {sqlalchemy.__version__}")
-    except Exception as e:
-        print(f"❌ SQLAlchemy が見つかりません: {e}")
-        return False
-
-    return True
+# ドメインエンティティ
+from domain.game import Game
+from domain.artist import Artist
+from domain.designer import Designer
+from domain.publisher import Publisher
+from domain.category import Category
+from domain.mechanic import Mechanic
+from domain.award import Award
+from domain.genre import Genre
+from domain.game_genre_rank import GameGenreRank
 
 
-def print_separator(title: str):
-    print("\n" + "=" * 70)
-    print(f" {title} ")
-    print("=" * 70)
+def _print_header(title: str) -> None:
+    print(f"\n=== {title} ===")
 
 
-def gen_test_bgg_ids(n: int = 3) -> List[int]:
-    """重複を避けるため大きめのランダムBGG IDを生成"""
-    ids = set()
-    while len(ids) < n:
-        ids.add(random.randint(900000, 999999))
-    return list(ids)
+def build_game_list() -> List[Game]:
+    """動作確認用の Game エンティティ一覧を構築"""
+    g1 = Game(
+        bgg_id=3001001,
+        primary_name="Repo Verify Game 1",
+        japanese_name="リポジトリ検証ゲーム1",
+        year_released=2020,
+        image_url="https://example.com/g1.png",
+        avg_rating=Decimal("8.1"),
+        ratings_count=12345,
+        comments_count=2345,
+        min_players=1,
+        max_players=4,
+        min_playtime=30,
+        max_playtime=60,
+        min_age=10,
+        weight=Decimal("2.50"),
+        rank_overall=150,
+        designers=[
+            Designer(name="Designer A", bgg_url="https://example.com/designer/a"),
+            Designer(name="Designer B", bgg_url=None),
+        ],
+        artists=[
+            Artist(name="Artist A", bgg_url=None),
+            Artist(name="Artist B", bgg_url="https://example.com/artist/b"),
+        ],
+        publishers=[
+            Publisher(name="Foo Publishing", bgg_url="https://example.com/pub/foo"),
+        ],
+        categories=[
+            Category(name="Card Game", bgg_url=None),
+            Category(name="Strategy Game", bgg_url="https://example.com/cat/strategy"),
+        ],
+        mechanics=[
+            Mechanic(name="Deck Building", bgg_url="https://example.com/mech/deck"),
+        ],
+        awards=[
+            Award(
+                award_name="Spiel des Jahres",
+                award_year=2020,
+                award_type="Winner",
+                bgg_url="https://example.com/awards/sdj-2020",
+            )
+        ],
+        genre_ranks=[
+            GameGenreRank(genre=Genre(name="Strategy", bgg_url="https://example.com/genre/strategy"), rank_in_genre=45)
+        ],
+        best_player_counts=[2, 3],
+    )
+
+    g2 = Game(
+        bgg_id=3001002,
+        primary_name="Repo Verify Game 2",
+        japanese_name=None,
+        year_released=2021,
+        image_url=None,
+        avg_rating=Decimal("7.4"),
+        ratings_count=4567,
+        comments_count=890,
+        min_players=2,
+        max_players=5,
+        min_playtime=45,
+        max_playtime=90,
+        min_age=12,
+        weight=Decimal("3.20"),
+        rank_overall=300,
+        designers=[
+            Designer(name="Designer B", bgg_url=None),
+            Designer(name="Designer C", bgg_url="https://example.com/designer/c"),
+        ],
+        artists=[
+            Artist(name="Artist B", bgg_url="https://example.com/artist/b")
+        ],
+        publishers=[
+            Publisher(name="Bar Publishing", bgg_url=None)
+        ],
+        categories=[
+            Category(name="Strategy Game", bgg_url="https://example.com/cat/strategy")
+        ],
+        mechanics=[
+            Mechanic(name="Area Control", bgg_url=None)
+        ],
+        awards=[
+            Award(
+                award_name="Kennerspiel des Jahres",
+                award_year=2021,
+                award_type="Nominee",
+                bgg_url=None,
+            )
+        ],
+        genre_ranks=[
+            GameGenreRank(genre=Genre(name="Family", bgg_url="https://example.com/genre/family"), rank_in_genre=120)
+        ],
+        best_player_counts=[3, 4, 5],
+    )
+
+    return [g1, g2]
 
 
-def main():
-    print("TargetGamesMapper + db.py 動作確認")
-    print(f"Python: {sys.version}")
+def verify_persisted_data(bgg_id_to_game_id: Dict[int, int]) -> None:
+    """DBに保存された内容をダンプして軽く検証"""
+    designers = DesignersMapper()
+    artists = ArtistsMapper()
+    publishers = PublishersMapper()
+    categories = CategoriesMapper()
+    mechanics = MechanicsMapper()
+    genre_ranks = GameGenreRanksMapper()
+    best_players = GameBestPlayerCountsMapper()
 
-    if not check_environment():
-        return
+    link_designers = GameDesignersLinkMapper()
+    link_artists = GameArtistsLinkMapper()
+    link_publishers = GamePublishersLinkMapper()
+    link_categories = GameCategoriesLinkMapper()
+    link_mechanics = GameMechanicsLinkMapper()
+    # awards のリンクはID列表示に留める
+    link_awards = GameAwardsLinkMapper()
 
-    mapper = TargetGamesMapper()
-    test_ids = gen_test_bgg_ids(4)
+    with session_scope() as session:
+        # name -> id を逆引き用に id -> name へ
+        def invert(d: Dict[str, int]) -> Dict[int, str]:
+            return {v: k for k, v in d.items()}
 
-    # 1セッション・1トランザクションで処理
-    session = SessionLocal()
-    try:
-        with session.begin():
-            print_separator("1) 事前クリーンアップ（同一BGG IDを削除）")
-            session.query(TargetGames).filter(TargetGames.bgg_id.in_(test_ids)).delete(synchronize_session=False)
-            print(f"✓ 既存のテスト対象行を削除（BGG IDs: {test_ids}）")
+        id_to_designer = invert(designers.get_all_name_to_id_mapping(session))
+        id_to_artist = invert(artists.get_all_name_to_id_mapping(session))
+        id_to_publisher = invert(publishers.get_all_name_to_id_mapping(session))
+        id_to_category = invert(categories.get_all_name_to_id_mapping(session))
+        id_to_mechanic = invert(mechanics.get_all_name_to_id_mapping(session))
 
-            print_separator("2) テストデータ投入")
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            rows = [
-                TargetGames(bgg_id=test_ids[0], memo=f"inserted at {now} #1"),
-                TargetGames(bgg_id=test_ids[1], memo=f"inserted at {now} #2"),
-                TargetGames(bgg_id=test_ids[2], memo=f"inserted at {now} #3"),
-                TargetGames(bgg_id=test_ids[3], memo=None),
-            ]
-            session.add_all(rows)
-            # commitは with session.begin() に任せる
-            print(f"✓ 挿入行数: {len(rows)}")
+        for bgg_id, gid in bgg_id_to_game_id.items():
+            _print_header(f"Verify game bgg_id={bgg_id}, id={gid}")
 
-            print_separator("3) list_all の確認")
-            all_rows = mapper.list_all(session=session)
-            print(f"✓ 取得件数: {len(all_rows)}")
-            # 直近投入分を表示（created_at昇順のため末尾にあるとは限らないためフィルタ）
-            for r in filter(lambda x: x.bgg_id in test_ids, all_rows):
-                print(f"  - BGG ID={r.bgg_id}, memo={r.memo}, created_at={r.created_at}")
-
-            print_separator("4) list_all_bgg_ids の確認")
-            bgg_ids = mapper.list_all_bgg_ids(session=session)
-            print(f"✓ BGG ID総数: {len(bgg_ids)}")
-            contained = [x for x in test_ids if x in bgg_ids]
-            print(f"✓ テスト挿入分が含まれる件数: {len(contained)}/{len(test_ids)}")
-            for x in contained:
-                print(f"  - 含まれる: {x}")
-
-            print_separator("5) get_by_bgg_id の確認")
-            target_id = test_ids[0]
-            row = mapper.get_by_bgg_id(target_id, session=session)
+            # gamesの非リレーション列を表示
+            row: GamesRow = session.query(GamesRow).filter(GamesRow.id == gid).first()
             if row:
-                print(f"✓ BGG ID={target_id} を取得: memo={row.memo}, created_at={row.created_at}")
-            else:
-                print(f"❌ BGG ID={target_id} が取得できませんでした")
+                print(f"- primary_name={row.primary_name}, year={row.year_released}, rating={row.avg_rating}, players={row.min_players}-{row.max_players}, rank={row.rank_overall}")
 
-        print_separator("6) コミット完了")
-        print("✓ トランザクションが正常にコミットされました")
+            # 紐付け（名称に変換して表示）
+            d_ids = link_designers.get_entity_ids_for_game(gid, session)
+            a_ids = link_artists.get_entity_ids_for_game(gid, session)
+            p_ids = link_publishers.get_entity_ids_for_game(gid, session)
+            c_ids = link_categories.get_entity_ids_for_game(gid, session)
+            m_ids = link_mechanics.get_entity_ids_for_game(gid, session)
+            w_ids = link_awards.get_entity_ids_for_game(gid, session)
 
-    except Exception as e:
-        print(f"❌ エラー: {e}")
-        # with session.begin() 内の例外は自動でrollbackされます
-    finally:
-        session.close()
+            print(f"- designers: {[id_to_designer.get(i, i) for i in d_ids]}")
+            print(f"- artists:   {[id_to_artist.get(i, i) for i in a_ids]}")
+            print(f"- publishers:{[id_to_publisher.get(i, i) for i in p_ids]}")
+            print(f"- categories:{[id_to_category.get(i, i) for i in c_ids]}")
+            print(f"- mechanics: {[id_to_mechanic.get(i, i) for i in m_ids]}")
+            print(f"- awards(ids): {w_ids}")
 
-    # 別セッションで再確認＆クリーンアップ選択
-    session2 = SessionLocal()
-    try:
-        with session2.begin():
-            print_separator("7) 別セッションで再確認")
-            again = session2.query(TargetGames).filter(TargetGames.bgg_id.in_(test_ids)).all()
-            print(f"✓ 残存テスト行: {len(again)}")
-            for r in again:
-                print(f"  - BGG ID={r.bgg_id}, memo={r.memo}, created_at={r.created_at}")
+            # ジャンルランク
+            ranks = genre_ranks.get_genre_ranks_by_game(gid, session)
+            print(f"- genre_ranks: {ranks}")
 
-            print_separator("8) クリーンアップ（任意）")
-            choice = input("テストデータを削除しますか？ (y/N): ").strip().lower()
-            if choice in ("y", "yes"):
-                deleted = session2.query(TargetGames).filter(TargetGames.bgg_id.in_(test_ids)) \
-                    .delete(synchronize_session=False)
-                print(f"✓ 削除件数: {deleted}")
-            else:
-                print("テストデータは保持します。")
-    finally:
-        session2.close()
+            # ベストプレイヤー数
+            counts = best_players.list_counts_by_game(gid, session)
+            print(f"- best_player_counts: {counts}")
 
-    print_separator("完了")
-    print("🎉 すべての確認が完了しました")
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="GamesRepositoryImpl 動作確認スクリプト")
+    args = parser.parse_args()
+
+    repo = GamesRepositoryImpl()
+    game_list = build_game_list()
+
+    print("開始: bulk_create_games")
+    bgg_id_to_game_id = repo.bulk_create_games(game_list)
+    print("完了: bulk_create_games")
+
+    _print_header("bgg_id -> game.id マッピング")
+    for bgg_id, gid in bgg_id_to_game_id.items():
+        print(f"- {bgg_id} -> {gid}")
+
+    verify_persisted_data(bgg_id_to_game_id)
+
+    print("\n✅ GamesRepositoryImpl の動作確認が完了しました。")
 
 
 if __name__ == "__main__":
